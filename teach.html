@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Typing Speed Dashboard</title>
+</head>
+<style>
+  table {
+    border-collapse: collapse;
+  }
+
+  table, th, td {
+    border: 1px solid black;
+  }
+</style>
+<body>
+  <table id="data-table">
+  <colgroup span="3"></colgroup>
+  <thead>
+    <tr>
+      <th>Roll No.</th>
+      <th>Total words</th>
+      <th>Total characters</th>
+    </tr>
+  </thead>
+  <tbody id="table-body">
+    <pre id="output"></pre>
+  </tbody>
+</table>
+<script>
+  if ("WebSocket" in window) {
+    var table = document.getElementById("data-table")
+    var tableBody = document.getElementById("table-body")
+    var output = document.getElementById("output")
+    var socket = new WebSocket("ws://localhost:12345/ws");
+    var res = [];
+
+    socket.onopen = function () {
+      output.innerHTML += "Status: Connected\n";
+    };
+
+
+    socket.onmessage = function(e) {
+      // output.innerHTML += e.data
+      var parsedData = JSON.parse(e.data)
+      
+      for(const prop in parsedData) {
+        res.push(JSON.parse(parsedData[prop]));
+      }
+      if(res.length) {
+        var d = Array.from(new Set(res.map(i => i.roll_number))).map(r => {
+          var distinctRollNumberArray = res.filter(i => i.roll_number === r);
+          var maxCharacters = distinctRollNumberArray.reduce((max, p) => p.total_characters > max ? p.total_characters : max, distinctRollNumberArray[0].total_characters)
+          return {
+            ['student']: distinctRollNumberArray.filter(a => a.total_characters === maxCharacters)
+          }
+        })
+
+        var dDescending = d.sort((a, b) => a['student'][0].total_characters > b['student'][0].total_characters ? 1 : -1)
+        console.log(dDescending)
+
+        // console.log(d)
+        // Check if table row already exists then update the first and second cells (total words & total characters) values
+
+        d.map(item => {
+          var obj = item['student'][0];
+          var existngRow = document.getElementById('row-' + obj['roll_number'])
+          if(existngRow) {
+            existngRow.children[1].innerHTML = obj['total_words']
+            existngRow.children[2].innerHTML = obj['total_characters']
+          } else {
+            var tableData = '<tr id="row-' + obj['roll_number'] + '">';
+            Object.keys(obj).map(i => tableData += `<td>${obj[i]}</td>`)
+            tableData += '</tr>'
+            tableBody.innerHTML += tableData
+          }
+        })
+
+        // d.map(item => {
+        //   var obj = item['student'][0];
+        //   for (row of table.rows) {
+        //     for (index in row.cells) {
+        //       console.log(row.cells[index])
+        //       if(row.cells.item(0).innerHTML === obj['roll_number']) {
+        //         row.cells.item(1).innerHTML = obj['total_words']
+        //         row.cells.item(2).innerHTML = obj['total_characters']
+        //       } else {
+        //         var tableData = '<tr>';
+        //         Object.keys(obj).map(i => tableData += `<td>${obj[i]}</td>`)
+        //         tableData += '</tr>'
+        //         tableBody.innerHTML += tableData
+        //       }
+        //     }
+        //   }
+        // })
+
+      }
+    }
+
+    function findAndReplaceTableCell(params) {
+      
+    }
+  } else {
+    alert("Sorry, your browser doesn't support HTML5 WebSocket. Upgrade your browser")
+  }
+
+</script>
+</body>
+</html>
