@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Go Socket</title>
+</head>
+<body>
+  <input id="input" type="text" />
+  <textarea id="messageBox" cols="30" rows="10"></textarea>
+  <button onclick="fetchMessages()">Fetch Message</button>
+  <pre id="output"></pre>
+  <br>
+  <table>
+  <colgroup span="4"></colgroup>
+  <tr>
+    <th>Roll No.</th>
+    <th>Total words</th>
+    <th>Total characters</th>
+    <th>Words/Minute</th>
+  </tr>
+  <tr>
+    <td>USA</td>
+    <td>Washington, D.C.</td>
+    <td>309 million</td>
+    <td>English</td>
+  </tr>
+</table>
+  <script>
+      var output = document.getElementById("output");
+      var input = document.getElementById("input");
+      var messageBox = document.getElementById("messageBox");
+
+      var word = '';
+      messageBox.addEventListener("keyup", function(event) {
+        var rollNumber = input.value;
+        if (rollNumber) {
+          if (event.code !== "Space") {
+            var char = String.fromCharCode(event.keyCode);
+            word += char.toLowerCase();
+          } else {
+            var data = {
+              "roll_number": rollNumber,
+              "message": word
+            }
+
+            // console.log(data)
+            socket.send(JSON.stringify(data))
+            word = ''
+          }
+        }
+      })
+
+      var socket = new WebSocket("ws://localhost:12345/ws");
+
+      socket.onopen = function (e) {
+          output.innerHTML += "Status: Connected\n";
+      };
+
+      var serverResponse = []
+      socket.onmessage = function (e) {
+          console.log(e.data)
+          output.innerHTML += "Server: " + e.data + "\n";
+          serverResponse.push(e.data)
+      };
+
+      function fetchMessages() {
+        var last = JSON.parse(serverResponse[serverResponse.length-1]);
+        var rollNo = document.createElement("p");
+        var message = document.createElement("p");
+        message.textContent += 'Message: ' + last['message']
+        rollNo.textContent += 'Roll Number: ' + last['roll_number'];
+        output.append(rollNo, message);
+      }
+  </script>
+</body>
+</html>
