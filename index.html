@@ -4,37 +4,49 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Go Socket</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+  integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 </head>
+<style>
+  #validation-msg {
+    display: none;
+    color: #dc3545;
+  }
+
+  #validation-msg.show {
+    display: inline;
+  }
+</style>
 <body>
-  <input id="input" type="text" />
-  <textarea id="messageBox" cols="30" rows="10"></textarea>
-  <button onclick="fetchMessages()">Fetch Message</button>
-  <pre id="output"></pre>
-  <br>
-  <table>
-  <colgroup span="4"></colgroup>
-  <tr>
-    <th>Roll No.</th>
-    <th>Total words</th>
-    <th>Total characters</th>
-    <th>Words/Minute</th>
-  </tr>
-  <tr>
-    <td>USA</td>
-    <td>Washington, D.C.</td>
-    <td>309 million</td>
-    <td>English</td>
-  </tr>
-</table>
+  <div class="container">
+    <!-- <pre id="output"></pre> -->
+    <form class="d-flex justify-content-center mt-5">
+      <div class="col-lg-8">
+        <div class="form-group mb-8">
+          <label for="#input">Roll Number</label>
+          <br>
+          <input id="input" class="form-control" type="text" placeholder="Roll No." required />
+          <small id="validation-msg">Please enter your roll number</small>
+        </div>
+        <div class="form-group my-2">
+          <label for="#messageBox">Message</label><br>
+          <textarea id="messageBox" cols="100" rows="20" class="form-control" placeholder="Start typing..."></textarea>
+        </div>
+      </div>
+    </form>
+  </div>
   <script>
-      var output = document.getElementById("output");
+      // var output = document.getElementById("output");
       var input = document.getElementById("input");
       var messageBox = document.getElementById("messageBox");
+      var validationMsg = document.getElementById("validation-msg")
 
       var word = '';
       messageBox.addEventListener("keyup", function(event) {
         var rollNumber = input.value;
         if (rollNumber) {
+          input.classList.toggle('is-invalid');
+          validationMsg.classList.toggle('show');
           if (event.code !== "Space") {
             var char = String.fromCharCode(event.keyCode);
             word += char.toLowerCase();
@@ -48,30 +60,25 @@
             socket.send(JSON.stringify(data))
             word = ''
           }
+        } else {
+          input.classList.toggle('is-invalid');
+          validationMsg.classList.toggle('show'); 
         }
       })
 
       var socket = new WebSocket("ws://localhost:12345/ws");
 
       socket.onopen = function (e) {
-          output.innerHTML += "Status: Connected\n";
+          // output.innerHTML += "Status: Connected\n";
+          console.log('Socket connected!')
       };
 
       var serverResponse = []
       socket.onmessage = function (e) {
-          console.log(e.data)
-          output.innerHTML += "Server: " + e.data + "\n";
+          // console.log(e.data)
+          // output.innerHTML += "Server: " + e.data + "\n";
           serverResponse.push(e.data)
       };
-
-      function fetchMessages() {
-        var last = JSON.parse(serverResponse[serverResponse.length-1]);
-        var rollNo = document.createElement("p");
-        var message = document.createElement("p");
-        message.textContent += 'Message: ' + last['message']
-        rollNo.textContent += 'Roll Number: ' + last['roll_number'];
-        output.append(rollNo, message);
-      }
   </script>
 </body>
 </html>
